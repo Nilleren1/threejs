@@ -195,8 +195,9 @@ const mouse = new THREE.Vector2();
 let INTERSECTED;
 
 function updateRaycaster(event) {
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 }
 
@@ -226,6 +227,21 @@ function onMouseMove(event) {
 
 function onMouseClick(event) {
   updateRaycaster(event);
+  handleClick(event);
+}
+
+function onTouchStart(event) {
+  event.preventDefault();
+  updateRaycaster(event.touches[0]);
+}
+
+function onTouchEnd(event) {
+  event.preventDefault();
+  updateRaycaster(event.changedTouches[0]);
+  handleClick(event.changedTouches[0]);
+}
+
+function handleClick(event) {
   const checkableObjects = scene.children.filter((obj) => obj.isCheckable);
   const intersects = raycaster.intersectObjects(checkableObjects);
 
@@ -285,6 +301,19 @@ function displayInfo(object, infoText) {
     },
     { once: true }
   );
+
+  document.addEventListener(
+    "touchstart",
+    (event) => {
+      if (!infoDiv.contains(event.target)) {
+        if (document.body.contains(infoDiv)) {
+          document.body.removeChild(infoDiv);
+        }
+      }
+    },
+    { once: true }
+  );
+
   requestAnimationFrame(() => {
     infoDiv.classList.add("show");
   });
@@ -396,3 +425,5 @@ animate();
 
 window.addEventListener("mousemove", onMouseMove);
 window.addEventListener("click", onMouseClick);
+window.addEventListener("touchstart", onTouchStart);
+window.addEventListener("touchend", onTouchEnd);
